@@ -332,25 +332,7 @@ L'administrateur peut notamment :
 
 ## 🖥️ Aperçu
 
-> 📸 **Ajouter ici une capture d'écran du dashboard**
-
-```text
-┌──────────────────────────────────────────────┐
-│              ADMIN DASHBOARD                 │
-├──────────────────────────────────────────────┤
-│                                              │
-│  Classification       Profils utilisateurs  │
-│  ─────────────        ────────────────────  │
-│                                              │
-│  Tables analysées      Règles d'accès        │
-│  Colonnes classées     Niveaux d'anonymisation│
-│                                              │
-│  Cache                 Scan de la base       │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
----
+<img width="1880" height="923" alt="dashbord" src="https://github.com/user-attachments/assets/27fc4aa9-4f99-42da-90e5-129230a02b4b" />
 
 # ⚡ 5. Gestion du cache
 
