@@ -1,278 +1,544 @@
-🛡️ Système intelligent d’anonymisation et de classification des données selon le profil et le niveau de risque RGPD
-📌 Description du projet
-Ce projet consiste à développer un système intelligent d’anonymisation et de classification des données permettant de faciliter la protection des données personnelles et le respect du Règlement général sur la protection des données (RGPD), tout en préservant au maximum l’utilité des données pour les différents besoins métiers.
+# 🛡️ Système intelligent d’anonymisation et de classification des données selon le profil utilisateur et le risque RGPD
 
-L’objectif est de mettre en place une approche dynamique dans laquelle le niveau d’anonymisation appliqué à une donnée dépend à la fois :
+## 📌 Présentation
 
-du niveau de risque associé à la donnée ;
-du profil de l’utilisateur ;
-du contexte d’utilisation de la donnée ;
-et des besoins d’analyse.
-Le système est organisé autour de trois composants principaux :
+Ce projet consiste à développer un système intelligent permettant de **classifier les données selon leur niveau de risque** et d'appliquer automatiquement une **anonymisation adaptée au profil de l'utilisateur et au contexte d'utilisation**.
 
-🤖 Classification intelligente des données
-🔐 Proxy d’anonymisation dynamique
-📊 Dashboard d’administration
-🏗️ Architecture générale
-                    ┌──────────────────────────┐
-                    │       Base de données    │
-                    │                          │
-                    │ Tables / Colonnes / Data │
-                    └────────────┬─────────────┘
-                                 │
-                                 ▼
-                    ┌──────────────────────────┐
-                    │ Classification intelligente│
-                    │                          │
-                    │       LLM + RAG          │
-                    │                          │
-                    │ Analyse + Questions      │
-                    │ + Contexte RGPD         │
-                    └────────────┬─────────────┘
-                                 │
-                                 ▼
-                    ┌──────────────────────────┐
-                    │ Niveau de risque         │
-                    │                          │
-                    │ Faible / Moyen / Élevé  │
-                    │ / Critique               │
-                    └────────────┬─────────────┘
-                                 │
-                                 ▼
-              ┌────────────────────────────────────┐
-              │       Proxy d'anonymisation        │
-              │                                    │
-              │ Profil utilisateur + Niveau risque │
-              │                                    │
-              │ Application dynamique des         │
-              │ techniques d'anonymisation         │
-              └────────────────┬───────────────────┘
-                               │
-                               ▼
-                    ┌──────────────────────────┐
-                    │ Données anonymisées      │
-                    │                          │
-                    │ Utiles pour l'analyse    │
-                    └──────────────────────────┘
+L'objectif est de protéger les données personnelles tout en **préservant leur utilité pour les besoins métiers, analytiques et statistiques**.
 
-                               ▲
-                               │
-                    ┌──────────┴───────────────┐
-                    │   Dashboard Administrateur│
-                    │                           │
-                    │ Classification            │
-                    │ Correction                │
-                    │ Scan                      │
-                    │ Cache                     │
-                    │ Profils & accès           │
-                    └──────────────────────────┘
-🤖 1. Classification intelligente des données
-La première partie du système consiste à identifier et classifier les données présentes dans la base de données.
+Contrairement à une approche dans laquelle toutes les données seraient anonymisées de la même manière, le système adopte une approche dynamique :
 
-Pour cela, le système utilise un modèle LLM associé à une architecture RAG (Retrieval-Augmented Generation).
+> **Niveau de risque de la donnée + Profil utilisateur + Type de donnée → Niveau d'anonymisation adapté**
 
-Le système fournit au modèle plusieurs informations permettant d’améliorer la classification :
+Le système repose sur trois composants principaux :
 
-Nom de la base de données
-Nom de la table
-Nom de la colonne
-Valeurs échantillons synthétiques
-Contexte RGPD récupéré grâce au RAG
-Réponses à plusieurs questions permettant d’affiner l’évaluation du risque
-Le modèle analyse ces informations afin de déterminer le niveau de risque associé à la colonne.
+* 🤖 **Classification intelligente des données avec LLM + RAG**
+* 🔐 **Proxy d'anonymisation dynamique selon le profil et le niveau de risque**
+* 📊 **Dashboard d'administration et de supervision**
 
-🎯 Niveaux de classification
+---
+
+# 🏗️ Architecture générale
+
+```text
+                         ┌──────────────────────────┐
+                         │      Base Oracle         │
+                         │                          │
+                         │ Tables / Colonnes / Data │
+                         └────────────┬─────────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────┐
+                    │ Classification intelligente     │
+                    │                                 │
+                    │          LLM + RAG              │
+                    │                                 │
+                    │ • Métadonnées                   │
+                    │ • Échantillons                  │
+                    │ • Contexte RGPD                 │
+                    │ • Questions d'analyse            │
+                    └───────────────┬─────────────────┘
+                                    │
+                                    ▼
+                         ┌────────────────────┐
+                         │ Niveau de risque   │
+                         │                    │
+                         │ Faible             │
+                         │ Moyen              │
+                         │ Élevé              │
+                         │ Critique           │
+                         └──────────┬─────────┘
+                                    │
+                                    ▼
+                  ┌──────────────────────────────────┐
+                  │      Proxy d'anonymisation       │
+                  │                                  │
+                  │ Profil utilisateur                │
+                  │ + Niveau de risque                │
+                  │ + Type de donnée                  │
+                  │ + Règles d'anonymisation         │
+                  └────────────────┬─────────────────┘
+                                   │
+                                   ▼
+                         ┌────────────────────┐
+                         │ Données protégées  │
+                         │                    │
+                         │ Utiles pour        │
+                         │ l'analyse          │
+                         └────────────────────┘
+
+                                   ▲
+                                   │
+                    ┌──────────────┴─────────────┐
+                    │   Dashboard Administrateur │
+                    │                            │
+                    │ • Classification           │
+                    │ • Correction               │
+                    │ • Scan                     │
+                    │ • Cache                    │
+                    │ • Profils                  │
+                    │ • Règles d'accès           │
+                    └────────────────────────────┘
+```
+
+---
+
+# 🤖 1. Classification intelligente des données — LLM + RAG
+
+La première étape consiste à **identifier et évaluer le niveau de risque des données présentes dans la base de données**.
+
+Le système analyse les colonnes à partir de plusieurs informations :
+
+* Nom de la base de données
+* Nom de la table
+* Nom de la colonne
+* Type de donnée
+* Échantillons de valeurs
+* Contexte associé à la donnée
+* Informations réglementaires récupérées par le RAG
+* Réponses à plusieurs questions d'analyse
+
+Ces informations sont transmises à un **LLM** afin de déterminer le niveau de risque associé à chaque colonne.
+
+## 🧠 LLM + RAG
+
+Le LLM ne se base donc pas uniquement sur le nom de la colonne.
+
+Le système utilise une architecture **RAG (Retrieval-Augmented Generation)** permettant de récupérer des informations pertinentes provenant de la documentation réglementaire utilisée par le projet.
+
+Le contexte récupéré est ensuite intégré à l'analyse du LLM afin de fournir une classification plus contextualisée.
+
+Le système utilise également un mécanisme de **questions/réponses** afin d'affiner l'évaluation du risque.
+
+```text
+Métadonnées
+     │
+     ├── Base
+     ├── Table
+     ├── Colonne
+     ├── Type
+     └── Échantillons
+              │
+              ▼
+        ┌────────────┐
+        │    RAG     │
+        │            │
+        │ Contexte   │
+        │ réglementaire
+        └─────┬──────┘
+              │
+              ▼
+        ┌────────────┐
+        │    LLM     │
+        │            │
+        │ Analyse +  │
+        │ Questions  │
+        └─────┬──────┘
+              │
+              ▼
+      Niveau de risque
+```
+
+## 🎯 Niveaux de risque
+
 Les données sont réparties en quatre niveaux :
 
-Niveau
+| Niveau          | Description                                            |
+| --------------- | ------------------------------------------------------ |
+| 🟢 **Faible**   | Données présentant un faible niveau de risque          |
+| 🟡 **Moyen**    | Données nécessitant une protection intermédiaire       |
+| 🟠 **Élevé**    | Données présentant un risque important                 |
+| 🔴 **Critique** | Données nécessitant un niveau de protection très élevé |
 
-Description
+La classification produite par le LLM n'est pas considérée comme définitive.
 
-🟢 Faible
+L'administrateur peut **vérifier, corriger ou remplacer manuellement une classification** depuis le dashboard.
 
-Données présentant un faible niveau de risque
+Cette approche permet de combiner :
 
-🟡 Moyen
+**Automatisation du LLM + contrôle humain**
 
-Données nécessitant une protection intermédiaire
+---
 
-🟠 Élevé
+# 🔐 2. Anonymisation selon le profil, le risque et le type de donnée
 
-Données présentant un risque important
+Une fois le niveau de risque déterminé, le système utilise cette information pour décider **du niveau d'anonymisation à appliquer**.
 
-🔴 Critique
+L'anonymisation n'est donc pas identique pour tous les utilisateurs.
 
-Données nécessitant un niveau de protection très élevé
+Le système prend en compte :
 
-Le résultat de la classification est ensuite utilisé par le proxy d’anonymisation afin de déterminer le niveau de protection nécessaire.
+* 👤 le **profil utilisateur** ;
+* 🔴 le **niveau de risque de la donnée** ;
+* 🧩 le **type de donnée** ;
+* 🔐 le **niveau d'anonymisation défini pour le profil** ;
+* 📊 les besoins d'utilisation de la donnée.
 
-🧠 Rôle du LLM + RAG
-Le LLM ne se base pas uniquement sur le nom de la colonne. Il prend également en compte le contexte fourni par le système et les informations récupérées par le RAG afin de produire une classification plus pertinente.
+L'objectif est de déterminer le niveau de protection permettant à l'utilisateur d'exploiter les données **sans exposer inutilement les informations sensibles**.
 
-Un mécanisme de questions/réponses est également utilisé pour compléter l’analyse et aider à déterminer le niveau de risque.
+## 🔄 Fonctionnement
 
-⚠️ La classification proposée par le LLM reste contrôlable par l’administrateur. Celui-ci conserve la possibilité de vérifier et de modifier les résultats.
+```text
+                 Donnée demandée
+                        │
+                        ▼
+               Niveau de risque
+                        │
+                        ▼
+                Profil utilisateur
+                        │
+                        ▼
+             Règles d'anonymisation
+                        │
+                        ▼
+              Niveau de protection
+                        │
+                        ▼
+             Technique appropriée
+                        │
+                        ▼
+                Donnée protégée
+                        │
+                        ▼
+                    Utilisateur
+```
 
-🔐 2. Proxy d’anonymisation dynamique
-La deuxième partie du projet est un proxy d’anonymisation placé entre l’utilisateur et les données.
+### Exemple
 
-Lorsqu’un utilisateur demande l’accès à des données, le proxy analyse :
+Une même donnée peut être traitée différemment selon le profil :
 
-le profil de l’utilisateur ;
-le niveau de classification de la donnée ;
-le niveau d’anonymisation requis pour ce profil ;
-le type de donnée.
-Le proxy applique ensuite automatiquement la technique d’anonymisation appropriée.
+```text
+                 Donnée sensible
+                       │
+                       ▼
+                Niveau de risque
+                       │
+              ┌────────┴────────┐
+              │                 │
+          Profil A           Profil B
+              │                 │
+       Protection faible   Protection forte
+              │                 │
+              ▼                 ▼
+       Plus d'utilité      Plus de protection
+```
 
-🔄 Fonctionnement
+Le système cherche ainsi à maintenir un **équilibre entre protection et utilité**.
+
+---
+
+# 🔒 3. Proxy d'anonymisation dynamique
+
+Le **proxy d'anonymisation** constitue la couche intermédiaire entre l'utilisateur et la base de données.
+
+L'utilisateur n'accède pas directement aux données originales.
+
+Lorsqu'une requête est exécutée, le proxy intercepte les données et applique les règles correspondantes.
+
+```text
 Utilisateur
      │
+     │ Requête
      ▼
-Requête vers les données
-     │
-     ▼
-┌─────────────────────┐
+┌──────────────────────┐
 │ Proxy d'anonymisation│
-└──────────┬──────────┘
+└──────────┬───────────┘
            │
            ├── Profil utilisateur
            │
-           ├── Classification de la donnée
+           ├── Niveau de risque
            │
-           └── Niveau d'anonymisation
+           ├── Type de donnée
+           │
+           └── Règle d'anonymisation
                     │
                     ▼
           Technique appropriée
                     │
                     ▼
-           Donnée anonymisée
+             Donnée protégée
                     │
                     ▼
                 Utilisateur
-🧩 Techniques d’anonymisation
-Le proxy peut utiliser différentes techniques selon le type de donnée et le niveau de protection nécessaire.
+```
 
-Par exemple :
+Cette architecture permet de centraliser les règles de protection et d'éviter que chaque application cliente doive implémenter elle-même les mécanismes d'anonymisation.
 
-Tokenisation
-Masquage
-Format-Preserving Encryption (FPE)
-Ajout de bruit statistique
-Transformation des dates
-Techniques adaptées aux données numériques
-Pour les données numériques, différents mécanismes de bruit peuvent être utilisés afin de protéger les valeurs tout en conservant leur utilité pour certaines analyses.
+---
 
-Pour les dates, il est par exemple possible de réduire la précision :
+# 🧩 Techniques d'anonymisation
 
-Date exacte
+Selon le type de donnée et le niveau de protection requis, différentes techniques peuvent être utilisées :
+
+* 🔑 **Tokenisation**
+* 🎭 **Masquage**
+* 🔐 **Format-Preserving Encryption (FPE)**
+* 📊 **Ajout de bruit statistique**
+* 📅 **Transformation ou réduction de précision des dates**
+* 🔢 **Techniques adaptées aux données numériques**
+
+### 📅 Exemple : transformation d'une date
+
+Une date exacte peut être transformée afin de réduire sa précision :
+
+```text
 2026-09-16
-      ↓
-Année
+     │
+     ▼
 2026
+```
+
 ou :
 
+```text
 2026-09-16
-      ↓
+     │
+     ▼
 2026-Q3
-L’objectif n’est donc pas simplement de supprimer ou de rendre inutilisables les données, mais de trouver un équilibre entre protection et utilité.
+```
 
-Par exemple, pour une analyse statistique des prix, un niveau de bruit adapté peut permettre de protéger les valeurs individuelles tout en conservant des tendances globales exploitables.
+### 📊 Exemple : données numériques
 
-📊 3. Dashboard Administrateur
-La troisième partie du projet est un dashboard destiné à l’administrateur.
+Pour certaines analyses statistiques, un mécanisme de bruit peut être appliqué :
 
-Le dashboard permet de superviser et de contrôler l’ensemble du processus de classification et d’anonymisation.
+```text
+Valeur originale
+       │
+       ▼
+Transformation
+       │
+       ▼
+Valeur protégée
+```
 
-👨‍💻 Fonctionnalités principales
-L’administrateur peut notamment :
+L'objectif est de protéger la valeur individuelle tout en conservant, lorsque cela est possible, certaines propriétés statistiques utiles à l'analyse.
 
-consulter les résultats de classification du LLM ;
-vérifier les niveaux attribués aux différentes colonnes ;
-corriger manuellement une classification lorsqu’elle est incorrecte ;
-lancer un nouveau scan de la base de données ;
-consulter et gérer le cache de classification ;
-gérer les profils utilisateurs ;
-définir ou modifier les niveaux d’anonymisation associés aux profils ;
-superviser les règles d’accès aux données.
-⚡ Système de cache
-La classification d’une base de données peut nécessiter l’analyse d’un grand nombre de tables et de colonnes.
+---
 
-Afin d’éviter de solliciter inutilement le LLM pour des données déjà analysées, un mécanisme de cache a été mis en place.
+# 📊 4. Dashboard Administrateur
 
-Lorsqu’une colonne a déjà été classifiée, le système peut réutiliser son résultat au lieu de refaire une nouvelle analyse.
+Le système dispose d'un **dashboard d'administration** permettant de superviser les différentes étapes du processus.
 
-Cela permet notamment :
+L'administrateur peut notamment :
 
-de réduire le nombre d’appels au LLM ;
-d’améliorer les performances ;
-de réduire les coûts liés à l’utilisation du modèle ;
-de conserver une classification stable jusqu’à sa modification par l’administrateur ou un nouveau scan.
-🖥️ Aperçu du Dashboard
-📸 Insérer ici une capture d’écran du dashboard administrateur
+* consulter les classifications produites par le LLM ;
+* vérifier les niveaux de risque ;
+* corriger manuellement une classification ;
+* lancer un nouveau scan de la base ;
+* consulter et gérer le cache ;
+* gérer les profils utilisateurs ;
+* définir les niveaux d'anonymisation associés aux profils ;
+* superviser les règles d'accès aux données.
 
-[ IMAGE DU DASHBOARD ADMINISTRATEUR ]
-👥 Gestion des profils
-Le niveau d’anonymisation n’est pas nécessairement identique pour tous les utilisateurs.
+## 🖥️ Aperçu
 
-Le système permet donc d’associer différents niveaux d’accès et d’anonymisation aux profils.
+> 📸 **Ajouter ici une capture d'écran du dashboard**
 
-Par exemple :
+```text
+┌──────────────────────────────────────────────┐
+│              ADMIN DASHBOARD                 │
+├──────────────────────────────────────────────┤
+│                                              │
+│  Classification       Profils utilisateurs  │
+│  ─────────────        ────────────────────  │
+│                                              │
+│  Tables analysées      Règles d'accès        │
+│  Colonnes classées     Niveaux d'anonymisation│
+│                                              │
+│  Cache                 Scan de la base       │
+│                                              │
+└──────────────────────────────────────────────┘
+```
 
-                    Donnée classifiée
-                          │
-                          ▼
+---
+
+# ⚡ 5. Gestion du cache
+
+La classification d'une base contenant un grand nombre de tables et de colonnes peut nécessiter de nombreuses analyses par le LLM.
+
+Un système de **cache de classification** est donc utilisé.
+
+Lorsqu'une colonne a déjà été analysée, son résultat peut être réutilisé plutôt que de lancer une nouvelle analyse.
+
+Cela permet notamment de :
+
+* réduire le nombre d'appels au LLM ;
+* améliorer les performances ;
+* réduire les traitements inutiles ;
+* conserver une classification stable ;
+* éviter de recalculer inutilement les mêmes résultats.
+
+Une nouvelle analyse peut être déclenchée lorsque cela est nécessaire, notamment après une modification ou un nouveau scan.
+
+---
+
+# 👥 6. Gestion des profils utilisateurs
+
+Le système permet de définir différents profils utilisateurs et de leur associer des règles d'accès et des niveaux d'anonymisation.
+
+Le principe est le suivant :
+
+```text
+                  Profil utilisateur
+                         │
+                         ▼
+                Règles d'accès
+                         │
+                         ▼
                  Niveau de risque
-                          │
-              ┌───────────┴───────────┐
-              │                       │
-         Profil A                  Profil B
-              │                       │
-       Anonymisation faible     Anonymisation forte
-              │                       │
-              ▼                       ▼
-       Données plus utiles       Données plus protégées
-Cette approche permet d’adapter la protection au contexte d’utilisation tout en conservant autant que possible la valeur analytique des données.
+                         │
+                         ▼
+            Niveau d'anonymisation
+                         │
+                         ▼
+              Technique appliquée
+```
 
-🎯 Objectifs du projet
-Les principaux objectifs du système sont :
+Ainsi, une même donnée peut être retournée sous différentes formes selon le profil qui effectue la requête.
 
-🔒 Protéger les données sensibles et personnelles
-🤖 Automatiser la classification des données grâce à un LLM + RAG
-👤 Adapter l’anonymisation au profil de l’utilisateur
-🛡️ Faciliter la mise en œuvre des principes de protection des données
-📊 Préserver l’utilité des données pour les analyses
-⚡ Réduire les traitements inutiles grâce au système de cache
-👨‍💻 Permettre à l’administrateur de contrôler et corriger les décisions du système
-🔄 Appliquer dynamiquement différentes techniques d’anonymisation
-🛠️ Technologies
-Le projet repose notamment sur :
+Cette approche permet d'adapter la protection au **contexte d'utilisation**, tout en conservant autant que possible l'utilité nécessaire aux traitements autorisés.
 
-Python
+---
+
+# 🛡️ 7. Contrôle humain et sécurité
+
+Le système ne considère pas le LLM comme l'autorité finale.
+
+Le LLM fournit une **proposition de classification**, qui peut ensuite être contrôlée par l'administrateur.
+
+Le processus est donc :
+
+```text
 LLM
-RAG (Retrieval-Augmented Generation)
-React
-Base de données Oracle
-PL/SQL
-Algorithmes et techniques d’anonymisation
-API / Proxy d’accès aux données
-🔒 Principe de sécurité
-Un principe important du projet est que le LLM ne constitue pas l’autorité finale.
+ │
+ │ Proposition
+ ▼
+Administrateur
+ │
+ ├── Valider
+ ├── Modifier
+ └── Relancer l'analyse
+```
 
-Le modèle fournit une proposition de classification, tandis que l’administrateur peut :
+Cette séparation permet de conserver un **contrôle humain sur les décisions de classification** et de limiter les conséquences d'une classification incorrecte.
 
-vérifier le résultat ;
-modifier la classification ;
-conserver la classification proposée ;
-relancer une analyse si nécessaire.
-Le système combine ainsi automatisation intelligente et contrôle humain.
+---
 
-🚀 Vision du projet
-Ce projet propose une approche permettant d’intégrer la protection des données directement dans le processus d’accès aux données.
+# 🎯 Objectifs
 
-Au lieu d’appliquer une anonymisation identique à toutes les données et à tous les utilisateurs, le système cherche à adapter dynamiquement la protection en fonction du niveau de risque, du profil utilisateur et du contexte d’utilisation.
+Le projet vise principalement à :
 
-L’objectif final est de trouver un équilibre entre :
+* 🔒 protéger les données personnelles et sensibles ;
+* 🤖 automatiser la classification grâce à un **LLM + RAG** ;
+* 👤 adapter l'anonymisation au profil utilisateur ;
+* 🔴 adapter le niveau de protection au risque associé aux données ;
+* 📊 préserver autant que possible l'utilité des données ;
+* ⚡ réduire les traitements inutiles grâce au cache ;
+* 👨‍💻 permettre à l'administrateur de contrôler et corriger les classifications ;
+* 🔄 appliquer dynamiquement différentes techniques d'anonymisation ;
+* 🛡️ intégrer la protection des données directement dans le processus d'accès.
 
-Protection des données 🔒 + Conformité RGPD 📋 + Utilité des données 📊
+---
 
-tout en donnant à l’administrateur un contrôle complet sur les décisions de classification et les règles d’anonymisation.
+# 🛠️ Technologies utilisées
+
+| Technologie                    | Utilisation                                |
+| ------------------------------ | ------------------------------------------ |
+| **Python**                     | Logique principale du système              |
+| **LLM**                        | Classification des données                 |
+| **RAG**                        | Recherche de contexte réglementaire        |
+| **Oracle Database**            | Stockage des données                       |
+| **PL/SQL**                     | Interaction avec la base                   |
+| **React**                      | Interface d'administration                 |
+| **API**                        | Communication entre les composants         |
+| **Proxy**                      | Interception et transformation des données |
+| **Techniques d'anonymisation** | Protection des données                     |
+
+---
+
+# 🔄 Vue globale du fonctionnement
+
+```text
+                    BASE ORACLE
+                        │
+                        ▼
+              ┌──────────────────┐
+              │ Analyse des      │
+              │ métadonnées      │
+              └────────┬─────────┘
+                       │
+                       ▼
+                 ┌───────────┐
+                 │ LLM + RAG │
+                 └─────┬─────┘
+                       │
+                       ▼
+               CLASSIFICATION
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+       Faible        Moyen        Élevé/Critique
+          │            │            │
+          └────────────┼────────────┘
+                       ▼
+              PROFIL UTILISATEUR
+                       │
+                       ▼
+          NIVEAU D'ANONYMISATION
+                       │
+                       ▼
+              PROXY DYNAMIQUE
+                       │
+                       ▼
+          TECHNIQUE D'ANONYMISATION
+                       │
+                       ▼
+             DONNÉES PROTÉGÉES
+                       │
+                       ▼
+                  UTILISATEUR
+```
+
+---
+
+# 🚀 Vision du projet
+
+Le projet propose une approche **dynamique et contextuelle de la protection des données**.
+
+Plutôt que d'appliquer une anonymisation identique à l'ensemble des données, le système adapte le traitement en fonction de plusieurs paramètres :
+
+```text
+       Niveau de risque
+              +
+      Profil utilisateur
+              +
+        Type de donnée
+              +
+      Contexte d'utilisation
+              │
+              ▼
+    Niveau d'anonymisation adapté
+```
+
+L'objectif est de rechercher un équilibre entre :
+
+**🔒 Protection des données**
+**📋 Respect des principes du RGPD**
+**📊 Utilité des données**
+
+tout en maintenant un **contrôle humain sur les classifications et les règles de protection**.
+
+---
+
+## 📌 Points clés du projet
+
+* 🤖 Classification automatisée avec **LLM + RAG**
+* 🔐 Proxy d'anonymisation dynamique
+* 👥 Gestion des profils utilisateurs
+* 🔴 Classification en quatre niveaux de risque
+* 🧩 Anonymisation adaptée au type de donnée
+* 📊 Préservation de l'utilité analytique
+* ⚡ Système de cache
+* 👨‍💻 Validation et correction par l'administrateur
+* 🗄️ Intégration avec **Oracle Database**
+* 🖥️ Dashboard d'administration
