@@ -1,390 +1,278 @@
-Système intelligent d’anonymisation et de classification des données RGPD
-# Système de gestion et d’anonymisation des données RGPD
+🛡️ Système intelligent d’anonymisation et de classification des données selon le profil et le niveau de risque RGPD
+📌 Description du projet
+Ce projet consiste à développer un système intelligent d’anonymisation et de classification des données permettant de faciliter la protection des données personnelles et le respect du Règlement général sur la protection des données (RGPD), tout en préservant au maximum l’utilité des données pour les différents besoins métiers.
 
-## 📌 Présentation
+L’objectif est de mettre en place une approche dynamique dans laquelle le niveau d’anonymisation appliqué à une donnée dépend à la fois :
 
-Ce projet consiste en la conception d’un système permettant de **classifier les données selon leur niveau de risque** et d’appliquer une **anonymisation adaptée au profil de l’utilisateur et à la sensibilité des données**.
+du niveau de risque associé à la donnée ;
+du profil de l’utilisateur ;
+du contexte d’utilisation de la donnée ;
+et des besoins d’analyse.
+Le système est organisé autour de trois composants principaux :
 
-L’application a été développée dans un contexte de gestion de données Oracle à grande échelle. L’architecture de la base étudiée comporte plus de **7 000 tables**, ce qui nécessite des mécanismes automatisés de classification et de protection des données.
-
-Cette partie du projet se concentre principalement sur :
-
-* le **backend Python** ;
-* les **API REST** ;
-* la connexion à Oracle ;
-* la classification des colonnes ;
-* le mécanisme RAG + LLM ;
-* l’application des règles d’anonymisation ;
-* le contrôle d’accès ;
-* l’**interface d’administration** permettant de modifier les paramètres du système.
-
----
-
-# 🏗️ Architecture backend
-
-L’application repose sur une architecture séparant le frontend, le backend et la base de données.
-
-```text
+🤖 Classification intelligente des données
+🔐 Proxy d’anonymisation dynamique
+📊 Dashboard d’administration
+🏗️ Architecture générale
                     ┌──────────────────────────┐
-                    │    Interface Admin       │
-                    │      React / CSS         │
+                    │       Base de données    │
+                    │                          │
+                    │ Tables / Colonnes / Data │
                     └────────────┬─────────────┘
                                  │
-                                 │ API REST / JSON
                                  ▼
                     ┌──────────────────────────┐
-                    │       Backend Python     │
-                    │          Flask           │
-                    ├──────────────────────────┤
-                    │ Authentification         │
-                    │ Contrôle des rôles       │
-                    │ Classification RGPD       │
-                    │ Anonymisation             │
-                    │ Gestion du cache          │
-                    │ Simulation                │
-                    └───────┬───────────┬──────┘
-                            │           │
-                    ┌───────▼───┐   ┌──▼─────────────┐
-                    │  Oracle   │   │ RAG + Mistral  │
-                    │  Database │   │ FAISS / Ollama │
-                    └───────────┘   └────────────────┘
-```
+                    │ Classification intelligente│
+                    │                          │
+                    │       LLM + RAG          │
+                    │                          │
+                    │ Analyse + Questions      │
+                    │ + Contexte RGPD         │
+                    └────────────┬─────────────┘
+                                 │
+                                 ▼
+                    ┌──────────────────────────┐
+                    │ Niveau de risque         │
+                    │                          │
+                    │ Faible / Moyen / Élevé  │
+                    │ / Critique               │
+                    └────────────┬─────────────┘
+                                 │
+                                 ▼
+              ┌────────────────────────────────────┐
+              │       Proxy d'anonymisation        │
+              │                                    │
+              │ Profil utilisateur + Niveau risque │
+              │                                    │
+              │ Application dynamique des         │
+              │ techniques d'anonymisation         │
+              └────────────────┬───────────────────┘
+                               │
+                               ▼
+                    ┌──────────────────────────┐
+                    │ Données anonymisées      │
+                    │                          │
+                    │ Utiles pour l'analyse    │
+                    └──────────────────────────┘
 
-Le rapport indique que **Python est utilisé pour le backend et la création des API**, React/CSS pour le frontend et PL/SQL pour la gestion de la base de données.
+                               ▲
+                               │
+                    ┌──────────┴───────────────┐
+                    │   Dashboard Administrateur│
+                    │                           │
+                    │ Classification            │
+                    │ Correction                │
+                    │ Scan                      │
+                    │ Cache                     │
+                    │ Profils & accès           │
+                    └──────────────────────────┘
+🤖 1. Classification intelligente des données
+La première partie du système consiste à identifier et classifier les données présentes dans la base de données.
 
----
+Pour cela, le système utilise un modèle LLM associé à une architecture RAG (Retrieval-Augmented Generation).
 
-# 🐍 Backend Python
+Le système fournit au modèle plusieurs informations permettant d’améliorer la classification :
 
-Le backend constitue le cœur fonctionnel de l’application.
+Nom de la base de données
+Nom de la table
+Nom de la colonne
+Valeurs échantillons synthétiques
+Contexte RGPD récupéré grâce au RAG
+Réponses à plusieurs questions permettant d’affiner l’évaluation du risque
+Le modèle analyse ces informations afin de déterminer le niveau de risque associé à la colonne.
 
-Il assure notamment :
+🎯 Niveaux de classification
+Les données sont réparties en quatre niveaux :
 
-* l’authentification des utilisateurs ;
-* le contrôle des permissions ;
-* la communication avec Oracle ;
-* le lancement des scans ;
-* la classification des colonnes ;
-* la récupération du contexte documentaire ;
-* l’appel au modèle Mistral ;
-* la gestion des résultats de classification ;
-* l’application des degrés d’anonymisation ;
-* la simulation de l’anonymisation ;
-* la gestion du cache.
+Niveau
 
-Le backend expose ces fonctionnalités sous forme d’**API**, permettant à l’interface React de communiquer avec le serveur.
+Description
 
----
+🟢 Faible
 
-# 🔐 Authentification et contrôle d'accès
+Données présentant un faible niveau de risque
 
-Avant d'accéder aux fonctionnalités de l'application, l'utilisateur doit s'authentifier.
+🟡 Moyen
 
-Le backend vérifie les identifiants puis détermine le profil de l'utilisateur.
+Données nécessitant une protection intermédiaire
 
-```text
+🟠 Élevé
+
+Données présentant un risque important
+
+🔴 Critique
+
+Données nécessitant un niveau de protection très élevé
+
+Le résultat de la classification est ensuite utilisé par le proxy d’anonymisation afin de déterminer le niveau de protection nécessaire.
+
+🧠 Rôle du LLM + RAG
+Le LLM ne se base pas uniquement sur le nom de la colonne. Il prend également en compte le contexte fourni par le système et les informations récupérées par le RAG afin de produire une classification plus pertinente.
+
+Un mécanisme de questions/réponses est également utilisé pour compléter l’analyse et aider à déterminer le niveau de risque.
+
+⚠️ La classification proposée par le LLM reste contrôlable par l’administrateur. Celui-ci conserve la possibilité de vérifier et de modifier les résultats.
+
+🔐 2. Proxy d’anonymisation dynamique
+La deuxième partie du projet est un proxy d’anonymisation placé entre l’utilisateur et les données.
+
+Lorsqu’un utilisateur demande l’accès à des données, le proxy analyse :
+
+le profil de l’utilisateur ;
+le niveau de classification de la donnée ;
+le niveau d’anonymisation requis pour ce profil ;
+le type de donnée.
+Le proxy applique ensuite automatiquement la technique d’anonymisation appropriée.
+
+🔄 Fonctionnement
 Utilisateur
      │
      ▼
-Login
+Requête vers les données
      │
      ▼
-Backend Python
-     │
-     ├── Identifiants invalides → Erreur
-     │
-     └── Identifiants valides
-                  │
-                  ▼
-             Profil utilisateur
-                  │
-          ┌───────┴────────┐
-          ▼                ▼
-      Espace Admin     Espace métier
-```
-
-Le système redirige ensuite l'utilisateur vers l'espace correspondant à son profil.
-
-Le contrôle des rôles empêche également un utilisateur d'accéder aux fonctionnalités réservées à un autre profil. Les tests du projet ont notamment vérifié le refus d'accès à l'espace administrateur et l'isolation entre les rôles.
-
----
-
-# 👨‍💼 Interface d'administration
-
-L’interface administrateur constitue le principal espace de **configuration et de pilotage du système**.
-
-L'administrateur peut agir sur plusieurs paramètres sans devoir modifier directement le code Python.
-
-Les fonctionnalités principales sont :
-
-### 1. 🔎 Lancer un scan de classification
-
-L'administrateur peut lancer un scan de la base afin d'analyser les colonnes et déterminer leur niveau de risque.
-
-```text
-Base Oracle
-     │
-     ▼
-Scan
-     │
-     ▼
-Analyse des tables / colonnes
-     │
-     ▼
-Classification
-     │
-     ├── CRITIQUE
-     ├── ÉLEVÉ
-     ├── MODÉRÉ
-     └── FAIBLE
-```
-
-Le lancement du scan fait partie des fonctionnalités prévues pour l'administrateur.
-
----
-
-# 🏷️ 2. Modifier le niveau de classification
-
-L'administrateur peut modifier le niveau de sensibilité attribué à une donnée classifiée.
+┌─────────────────────┐
+│ Proxy d'anonymisation│
+└──────────┬──────────┘
+           │
+           ├── Profil utilisateur
+           │
+           ├── Classification de la donnée
+           │
+           └── Niveau d'anonymisation
+                    │
+                    ▼
+          Technique appropriée
+                    │
+                    ▼
+           Donnée anonymisée
+                    │
+                    ▼
+                Utilisateur
+🧩 Techniques d’anonymisation
+Le proxy peut utiliser différentes techniques selon le type de donnée et le niveau de protection nécessaire.
 
 Par exemple :
 
-```text
-COLONNE              NIVEAU
---------------------------------
-NUM_CLIENT           CRITIQUE
-EMAIL                ÉLEVÉ
-VILLE                MODÉRÉ
-CODE_POSTAL          FAIBLE
-```
+Tokenisation
+Masquage
+Format-Preserving Encryption (FPE)
+Ajout de bruit statistique
+Transformation des dates
+Techniques adaptées aux données numériques
+Pour les données numériques, différents mécanismes de bruit peuvent être utilisés afin de protéger les valeurs tout en conservant leur utilité pour certaines analyses.
 
-L'interface permet donc de corriger ou d'ajuster une classification lorsque cela est nécessaire.
+Pour les dates, il est par exemple possible de réduire la précision :
 
-Cette possibilité est explicitement prévue dans le backlog du projet : l'administrateur peut **modifier les niveaux de sensibilité des données classifiées**.
+Date exacte
+2026-09-16
+      ↓
+Année
+2026
+ou :
 
----
+2026-09-16
+      ↓
+2026-Q3
+L’objectif n’est donc pas simplement de supprimer ou de rendre inutilisables les données, mais de trouver un équilibre entre protection et utilité.
 
-# 🧹 3. Vider le cache de classification
+Par exemple, pour une analyse statistique des prix, un niveau de bruit adapté peut permettre de protéger les valeurs individuelles tout en conservant des tendances globales exploitables.
 
-Le backend utilise un mécanisme de cache pour conserver certains résultats de classification.
+📊 3. Dashboard Administrateur
+La troisième partie du projet est un dashboard destiné à l’administrateur.
 
-L'administrateur dispose d'une fonctionnalité permettant de supprimer ces résultats afin de forcer un nouveau calcul.
+Le dashboard permet de superviser et de contrôler l’ensemble du processus de classification et d’anonymisation.
 
-```text
-Classification existante
-          │
-          ▼
-        CACHE
-          │
-          │ "Vider le cache"
-          ▼
-      Cache supprimé
-          │
-          ▼
-Nouvelle classification
-```
+👨‍💻 Fonctionnalités principales
+L’administrateur peut notamment :
 
-Cette fonctionnalité permet notamment de recalculer la classification d'une colonne lorsque ses paramètres ou les règles utilisées ont changé.
+consulter les résultats de classification du LLM ;
+vérifier les niveaux attribués aux différentes colonnes ;
+corriger manuellement une classification lorsqu’elle est incorrecte ;
+lancer un nouveau scan de la base de données ;
+consulter et gérer le cache de classification ;
+gérer les profils utilisateurs ;
+définir ou modifier les niveaux d’anonymisation associés aux profils ;
+superviser les règles d’accès aux données.
+⚡ Système de cache
+La classification d’une base de données peut nécessiter l’analyse d’un grand nombre de tables et de colonnes.
 
----
+Afin d’éviter de solliciter inutilement le LLM pour des données déjà analysées, un mécanisme de cache a été mis en place.
 
-# 🛡️ 4. Modifier le degré d'anonymisation
+Lorsqu’une colonne a déjà été classifiée, le système peut réutiliser son résultat au lieu de refaire une nouvelle analyse.
 
-L'administrateur peut également modifier le **degré d'anonymisation appliqué à une colonne**.
+Cela permet notamment :
 
-L'interface permet donc de sélectionner le niveau de protection souhaité.
+de réduire le nombre d’appels au LLM ;
+d’améliorer les performances ;
+de réduire les coûts liés à l’utilisation du modèle ;
+de conserver une classification stable jusqu’à sa modification par l’administrateur ou un nouveau scan.
+🖥️ Aperçu du Dashboard
+📸 Insérer ici une capture d’écran du dashboard administrateur
 
-```text
-Colonne
-   │
-   ▼
-Niveau de risque
-   │
-   ▼
-Profil utilisateur
-   │
-   ▼
-Degré d'anonymisation
-   │
-   ├── D0
-   ├── D1
-   ├── D2
-   └── D3
-```
+[ IMAGE DU DASHBOARD ADMINISTRATEUR ]
+👥 Gestion des profils
+Le niveau d’anonymisation n’est pas nécessairement identique pour tous les utilisateurs.
 
-Le degré appliqué dépend ainsi des règles définies dans le système, du profil de l'utilisateur et du niveau de risque de la donnée.
+Le système permet donc d’associer différents niveaux d’accès et d’anonymisation aux profils.
 
----
+Par exemple :
 
-# 🧪 5. Simulation de l'anonymisation
+                    Donnée classifiée
+                          │
+                          ▼
+                 Niveau de risque
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+         Profil A                  Profil B
+              │                       │
+       Anonymisation faible     Anonymisation forte
+              │                       │
+              ▼                       ▼
+       Données plus utiles       Données plus protégées
+Cette approche permet d’adapter la protection au contexte d’utilisation tout en conservant autant que possible la valeur analytique des données.
 
-Avant d'appliquer réellement une transformation, l'administrateur peut utiliser la fonctionnalité de simulation.
+🎯 Objectifs du projet
+Les principaux objectifs du système sont :
 
-```text
-Donnée originale
-       │
-       ▼
-Configuration du degré
-       │
-       ▼
-     Simulation
-       │
-       ▼
-Donnée transformée
-```
+🔒 Protéger les données sensibles et personnelles
+🤖 Automatiser la classification des données grâce à un LLM + RAG
+👤 Adapter l’anonymisation au profil de l’utilisateur
+🛡️ Faciliter la mise en œuvre des principes de protection des données
+📊 Préserver l’utilité des données pour les analyses
+⚡ Réduire les traitements inutiles grâce au système de cache
+👨‍💻 Permettre à l’administrateur de contrôler et corriger les décisions du système
+🔄 Appliquer dynamiquement différentes techniques d’anonymisation
+🛠️ Technologies
+Le projet repose notamment sur :
 
-Cette fonctionnalité permet de visualiser le résultat attendu de l'anonymisation et de vérifier que le niveau de protection choisi correspond au besoin.
-
-La simulation de l'anonymisation fait partie des fonctionnalités administrateur définies dans le projet.
-
----
-
-# 🤖 Classification assistée par RAG + LLM
-
-Le backend intègre également un mécanisme de **Retrieval-Augmented Generation (RAG)**.
-
-Le principe est de fournir au modèle de langage un contexte documentaire permettant d'améliorer la classification des données.
-
-```text
-Documents RGPD / CNIL
-          │
-          ▼
-      Découpage
-          │
-          ▼
-      Embeddings
-          │
-          ▼
-         FAISS
-          │
-          ▼
-Recherche du contexte
-          │
-          ▼
-       Mistral
-          │
-          ▼
-Classification RGPD
-```
-
-Le modèle de langage est exécuté localement avec **Ollama**, ce qui permet au système de fonctionner sans envoyer les données analysées vers un service externe. Le rapport décrit Ollama comme permettant l'exécution locale de modèles LLM.
-
----
-
-# 🔄 Fonctionnement global du backend
-
-Le traitement d'une donnée peut être résumé ainsi :
-
-```text
-1. Connexion utilisateur
-          ↓
-2. Identification du profil
-          ↓
-3. Accès autorisé
-          ↓
-4. Sélection / scan de la base
-          ↓
-5. Analyse des colonnes
-          ↓
-6. Classification du risque
-          ↓
-7. Détermination du niveau d'anonymisation
-          ↓
-8. Application des règles
-          ↓
-9. Retour des données protégées
-```
-
-L'objectif est d'adapter le traitement de la donnée en fonction de sa sensibilité et des autorisations de l'utilisateur.
-
----
-
-# 🧩 Technologies Backend
-
-| Technologie         | Utilisation                             |
-| ------------------- | --------------------------------------- |
-| **Python**          | Développement du backend                |
-| **Flask**           | API et serveur backend                  |
-| **Oracle Database** | Stockage et accès aux données           |
-| **PL/SQL**          | Gestion de la base de données           |
-| **Ollama**          | Exécution locale du LLM                 |
-| **Mistral**         | Classification assistée par LLM         |
-| **FAISS**           | Recherche vectorielle                   |
-| **Embeddings**      | Représentation sémantique des documents |
-| **RAG**             | Recherche de contexte documentaire      |
-| **REST / JSON**     | Communication frontend/backend          |
-
-Le rapport confirme l'utilisation de Python pour le backend/API, React/CSS pour l'interface et PL/SQL pour la base de données.
-
----
-
-# 🔒 Sécurité du backend
-
-Le système intègre un contrôle d'accès basé sur les profils.
-
-Chaque utilisateur ne peut accéder qu'aux fonctionnalités correspondant à ses autorisations.
-
-Les tests réalisés dans le projet comprennent notamment :
-
-* accès non autorisé à l'espace administrateur ;
-* accès direct sans authentification ;
-* isolation entre les espaces des différents rôles.
-
-Ces tests ont été validés dans le cadre du projet.
-
----
-
-# 👨‍💻 Partie technique mise en avant
-
-La partie backend du projet met principalement en œuvre :
-
-```text
 Python
- │
- ├── API REST
- │
- ├── Authentification
- │
- ├── RBAC / contrôle d'accès
- │
- ├── Connexion Oracle
- │
- ├── Scan de la base
- │
- ├── Classification RGPD
- │
- ├── RAG
- │     ├── Embeddings
- │     ├── FAISS
- │     └── Recherche de contexte
- │
- ├── Mistral / Ollama
- │
- ├── Gestion du cache
- │
- ├── Anonymisation
- │
- └── Simulation
-```
+LLM
+RAG (Retrieval-Augmented Generation)
+React
+Base de données Oracle
+PL/SQL
+Algorithmes et techniques d’anonymisation
+API / Proxy d’accès aux données
+🔒 Principe de sécurité
+Un principe important du projet est que le LLM ne constitue pas l’autorité finale.
 
-L'interface administrateur permet ensuite de **piloter ces fonctionnalités depuis l'application**, notamment le scan, la modification des classifications, la gestion du cache, le changement du degré d'anonymisation et la simulation.
+Le modèle fournit une proposition de classification, tandis que l’administrateur peut :
 
----
+vérifier le résultat ;
+modifier la classification ;
+conserver la classification proposée ;
+relancer une analyse si nécessaire.
+Le système combine ainsi automatisation intelligente et contrôle humain.
 
-# 📌 Confidentialité
+🚀 Vision du projet
+Ce projet propose une approche permettant d’intégrer la protection des données directement dans le processus d’accès aux données.
 
-Le projet ayant été réalisé dans un contexte bancaire, les données réelles, informations confidentielles, identifiants de connexion, mots de passe et paramètres sensibles de l'environnement de production ne doivent pas être publiés dans ce repository.
+Au lieu d’appliquer une anonymisation identique à toutes les données et à tous les utilisateurs, le système cherche à adapter dynamiquement la protection en fonction du niveau de risque, du profil utilisateur et du contexte d’utilisation.
 
-Le repository doit contenir uniquement le code nécessaire à la compréhension de l'architecture et du fonctionnement du projet.
+L’objectif final est de trouver un équilibre entre :
 
----
+Protection des données 🔒 + Conformité RGPD 📋 + Utilité des données 📊
 
-# 👨‍💻 Auteur
-
-**Slim Sallem**
-
-Licence en Informatique Appliquée à la Gestion — spécialité Business Intelligence
-
-Projet de fin d'études — 2025/2026
-
-**BIAT Innovation & Technology**
+tout en donnant à l’administrateur un contrôle complet sur les décisions de classification et les règles d’anonymisation.
